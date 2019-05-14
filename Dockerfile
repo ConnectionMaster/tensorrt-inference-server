@@ -46,6 +46,12 @@ RUN sha1sum -c /tmp/trtis/tools/patch/tensorflow/checksums && \
     patch -i /tmp/trtis/tools/patch/tensorflow/BUILD \
           /opt/tensorflow/tensorflow/BUILD
 
+# Copy tensorflow_backend_tf into TensorFlow so it builds into the
+# libtensorflow_trtis library. We want tensorflow_backend_tf to build
+# against the TensorFlow protobuf since it interfaces with that code.
+COPY src/backends/tensorflow/tensorflow_backend_tf.* \
+     /opt/tensorflow/tensorflow/
+
 # The link script to hide all symbols except those needed by TRTIS
 COPY src/backends/tensorflow/libtensorflow_trtis.ldscript /opt/tensorflow/tensorflow/
 

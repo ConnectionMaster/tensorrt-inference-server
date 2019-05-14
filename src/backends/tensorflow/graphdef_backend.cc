@@ -32,9 +32,6 @@
 #include "src/core/filesystem.h"
 #include "src/core/model_config.h"
 #include "src/core/model_config_utils.h"
-#include "tensorflow/c/c_api.h"
-#include "tensorflow/core/graph/default_device.h"
-#include "tensorflow/core/public/session.h"
 
 namespace nvidia { namespace inferenceserver {
 

@@ -27,7 +27,6 @@
 
 #include "src/backends/tensorflow/base_backend.h"
 #include "src/core/status.h"
-#include "tensorflow/core/protobuf/meta_graph.pb.h"
 
 namespace nvidia { namespace inferenceserver {
 

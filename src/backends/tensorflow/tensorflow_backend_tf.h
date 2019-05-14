@@ -1,4 +1,4 @@
-// Copyright (c) 2018-2019, NVIDIA CORPORATION. All rights reserved.
+// Copyright (c) 2019, NVIDIA CORPORATION. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -25,6 +25,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
+#include <memory>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -32,11 +33,11 @@
 
 namespace nvidia { namespace inferenceserver {
 
-// To avoid namespace and protobuf collision between TRTIS and Caffe2,
-// we keep Caffe2 interface isolated to netdef_backend_c2. The
-// interface to those isolated functions is provided by
-// Caffe2Workspace.
-class Caffe2Workspace {
+// To avoid namespace and protobuf collision between TRTIS and
+// TensorFlow, we keep TensorFlow interface isolated to
+// tensorflow_backend_tf. The interface to those isolated functions is
+// provided by TFWorkspace.
+class TFWorkspace {
  public:
   // GPU device number that indicates that no gpu is available for a
   // context
@@ -60,7 +61,7 @@ class Caffe2Workspace {
   };
 
   // Input or output datatype. Protobufs can't cross the
-  // Caffe2Workspace boundary so need to have this non-protobuf
+  // TFWorkspace boundary so need to have this non-protobuf
   // definition.
   enum DataType {
     TYPE_INVALID,
@@ -79,46 +80,54 @@ class Caffe2Workspace {
     TYPE_STRING
   };
 
-  virtual ~Caffe2Workspace() = default;
+  // An input or output
+  struct IO {
+    IO() = default;
+    std::string name_;
+    DataType data_type_;
+    std::vector<int> shape_;
+  };
+  using IOList = std::vector<IO>;
 
-  // Return names of all possible inputs and outputs for the
-  // model. These are names reported by the model netdef itself as
-  // external inputs and outputs.
-  virtual const std::set<std::string>& PotentialInputNames() const = 0;
-  virtual const std::set<std::string>& PotentialOutputNames() const = 0;
+  // A tensor
+  struct Tensor {
+    static Error Create(
+        const DataType data_type, const std::vector<int> shape,
+        std::unique_ptr<Tensor>* tensor);
 
-  // Set the value for an input tensor in preparation for inferencing.
-  virtual Error SetInputTensor(
-      const std::string& name, const std::vector<int64_t>& shape,
-      const DataType dtype, const char* content, size_t byte_size) = 0;
+    virtual ~Tensor() = default;
+    virtual void* Base() const = 0;
+    virtual size_t ByteSize() const = 0;
+  };
 
-  // Get the value for an output tensor after inferencing.
-  virtual Error GetOutputTensor(
-      const std::string& name, const Caffe2Workspace::DataType dtype,
-      const char** content, size_t* byte_size,
-      std::vector<int64_t>* content_shape) = 0;
+  virtual ~TFWorkspace() = default;
 
-  // Run the model.
-  virtual Error Run() = 0;
+  // Get the model inputs
+  virtual Error Inputs(IOList* ios) const = 0;
+
+  // Get the model outputs
+  virtual Error Outputs(IOList* ios) const = 0;
 };
 
 extern "C" {
 
 #if defined(_MSC_VER)
-#define CAFFE2WS_EXPORT __declspec(dllexport)
+#define TFWS_EXPORT __declspec(dllexport)
 #elif defined(__GNUC__)
-#define CAFFE2WS_EXPORT __attribute__((__visibility__("default")))
+#define TFWS_EXPORT __attribute__((__visibility__("default")))
 #else
-#define CAFFE2WS_EXPORT
+#define TFWS_EXPORT
 #endif
 
-// Create a Caffe2Workspace that interfaces with the Caffe2 library
+// Create a TFWorkspace that interfaces with the Tensorflow library
 // for a model specified by an init and network blob.
-CAFFE2WS_EXPORT Caffe2Workspace::Error Caffe2WorkspaceCreate(
-    Caffe2Workspace** c2ws, const std::string& model_name,
-    const int max_batch_size, const std::vector<std::string>& input_names,
-    const std::vector<std::string>& output_names, const int gpu_device,
-    const std::vector<char>& init_blob, const std::vector<char>& model_blob);
+TFWS_EXPORT TFWorkspace::Error TFWorkspaceCreateFromSavedModel(
+    TFWorkspace** tfws, const std::string& model_name,
+    const std::string& model_path, const int gpu_device,
+    const bool has_graph_level, const int graph_level,
+    const bool allow_gpu_memory_growth,
+    const float per_process_gpu_memory_fraction,
+    const bool allow_soft_placement);
 
 }  // extern "C"
 

@@ -27,13 +27,11 @@
 #include "src/backends/tensorflow/savedmodel_backend.h"
 
 #include <set>
-#include "src/backends/tensorflow/loader.h"
 #include "src/backends/tensorflow/tf_utils.h"
 #include "src/core/constants.h"
 #include "src/core/logging.h"
 #include "src/core/model_config.h"
 #include "src/core/model_config_utils.h"
-#include "tensorflow/c/c_api.h"
 
 namespace nvidia { namespace inferenceserver {
 
@@ -52,26 +50,6 @@ SavedModelBackend::CreateSession(
     const std::string& model_path, tensorflow::Session** session,
     IONameMap* input_name_map, IONameMap* output_name_map)
 {
-  // Set the default device to control the CPU/GPU that the graph runs
-  // on. This isn't foolproof since individual operations in the graph
-  // could specify a specific run location. But given that
-  // visible_device_list doesn't work it seems like the only option we
-  // have. [DLIS-43]
-  //
-  // The GraphDef where we need to use this workaround is only
-  // available in tensorflow/cc/saved_model/loader.cc so we use
-  // visible_device_list in pass in the gpu_device we want and then
-  // our (modified) loader.cc will use that to SetDefaultDevice
-  // appropriately.
-  tensorflow::SessionOptions session_options = options;
-  if (gpu_device == Context::NO_GPU_DEVICE) {
-    session_options.config.mutable_gpu_options()->set_visible_device_list(
-        "/cpu:0");
-  } else {
-    session_options.config.mutable_gpu_options()->set_visible_device_list(
-        "/gpu:" + std::to_string(gpu_device));
-  }
-
   std::unique_ptr<tensorflow::SavedModelBundle> bundle;
   tensorflow::SignatureDef sig;
   RETURN_IF_ERROR(
