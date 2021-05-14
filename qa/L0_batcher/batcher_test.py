@@ -1,4 +1,4 @@
-# Copyright (c) 2018-2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2018-2021, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -38,6 +38,7 @@ import test_util as tu
 
 import tritonclient.grpc as grpcclient
 
+OS_WINDOWS = bool(int(os.environ.get('OS_WINDOWS', 0)))
 TEST_SYSTEM_SHARED_MEMORY = bool(
     int(os.environ.get('TEST_SYSTEM_SHARED_MEMORY', 0)))
 TEST_CUDA_SHARED_MEMORY = bool(int(os.environ.get('TEST_CUDA_SHARED_MEMORY',
@@ -56,14 +57,18 @@ if USE_GRPC and USE_HTTP:
     USE_GRPC = False
 assert USE_GRPC or USE_HTTP, "USE_GRPC or USE_HTTP must be non-zero"
 
-BACKENDS = os.environ.get('BACKENDS',
-                          "graphdef savedmodel onnx libtorch plan custom")
+BACKENDS = os.environ.get('BACKENDS', "graphdef savedmodel onnx libtorch plan")
 
 _trials = BACKENDS.split(" ")
-if "custom" in BACKENDS:
-    _ragged_batch_supported_trials = ("custom",)
-else:
-    _ragged_batch_supported_trials = ()
+
+_ragged_batch_supported_trials = []
+if not OS_WINDOWS:
+    # FIXME enable once windows builds the identity backend
+    _ragged_batch_supported_trials.append("custom")
+if "plan" in _trials:
+    _ragged_batch_supported_trials.append("plan")
+if "onnx" in _trials:
+    _ragged_batch_supported_trials.append("onnx")
 
 _max_queue_delay_ms = 10000
 
@@ -138,8 +143,8 @@ class BatcherTest(tu.TestResultCollector):
         try:
             start_ms = int(round(time.time() * 1000))
 
-            if trial == "savedmodel" or trial == "graphdef" or trial == "custom" \
-                    or trial == "libtorch" or trial == "onnx" or trial == "plan":
+            if trial == "savedmodel" or trial == "graphdef" or trial == "libtorch" \
+                    or trial == "onnx" or trial == "plan":
                 tensor_shape = (bs, input_size)
                 iu.infer_exact(
                     self,
@@ -1307,8 +1312,10 @@ class BatcherTest(tu.TestResultCollector):
                                      args=(self, model_base, 1, dtype, shapes,
                                            shapes),
                                      kwargs={
-                                         'use_grpc': USE_GRPC,
-                                         'use_http': USE_HTTP,
+                                         'use_grpc':
+                                             USE_GRPC,
+                                         'use_http':
+                                             USE_HTTP,
                                          'use_http_json_tensors':
                                              False,
                                          'use_streaming':

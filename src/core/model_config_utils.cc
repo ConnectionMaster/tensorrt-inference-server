@@ -703,11 +703,6 @@ GetNormalizedModelConfig(
       config->set_default_model_filename(kPyTorchLibTorchFilename);
     } else
 #endif  // TRITON_ENABLE_PYTORCH
-#ifdef TRITON_ENABLE_CUSTOM
-        if (config->platform() == kCustomPlatform) {
-      config->set_default_model_filename(kCustomFilename);
-    } else
-#endif  // TRITON_ENABLE_CUSTOM
 #ifdef TRITON_ENABLE_ENSEMBLE
         if (config->platform() == kEnsemblePlatform) {
       // No actual model file is needed to be loaded for ensemble.
@@ -985,12 +980,6 @@ ValidateModelConfig(
 #ifdef TRITON_ENABLE_TENSORRT
       case BackendType::BACKEND_TYPE_TENSORRT:
 #endif  // TRITON_ENABLE_TENSORRT
-#ifdef TRITON_ENABLE_ONNXRUNTIME
-      case BackendType::BACKEND_TYPE_ONNXRUNTIME:
-#endif  // TRITON_ENABLE_ONNXRUNTIME
-#ifdef TRITON_ENABLE_PYTORCH
-      case BackendType::BACKEND_TYPE_PYTORCH:
-#endif  // TRITON_ENABLE_PYTORCH
         // FIXME: Do nothing for above type until they are ported with backend
         // API
         break;
@@ -1230,25 +1219,12 @@ ValidateModelConfig(
 #endif  // TRITON_ENABLE_GPU
 
     for (const auto& group : config.instance_group()) {
-      // KIND_MODEL is supported only on TensorFlow.
       if (group.kind() == inference::ModelInstanceGroup::KIND_MODEL) {
         if (group.gpus().size() > 0) {
           return Status(
               Status::Code::INVALID_ARG,
               "instance group " + group.name() + " of model " + config.name() +
                   " has kind KIND_MODEL but specifies one or more GPUs");
-        }
-#ifdef TRITON_ENABLE_TENSORFLOW
-        if (!(config.platform() == kTensorFlowGraphDefPlatform ||
-              config.platform() == kTensorFlowSavedModelPlatform))
-#endif  // TRITON_ENABLE_TENSORFLOW
-        {
-          return Status(
-              Status::Code::INVALID_ARG,
-              "instance group " + group.name() + " of model " + config.name() +
-                  "on platform " + config.platform() +
-                  " has kind KIND_MODEL which is supported only on TensorFlow "
-                  "models");
         }
       } else if (group.kind() == inference::ModelInstanceGroup::KIND_GPU) {
 #ifndef TRITON_ENABLE_GPU

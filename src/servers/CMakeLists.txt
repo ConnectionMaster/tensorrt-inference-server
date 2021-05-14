@@ -54,14 +54,11 @@ if(${TRITON_ENABLE_GRPC})
     target_include_directories(grpc-endpoint-library PRIVATE ${CUDA_INCLUDE_DIRS})
   endif() # TRITON_ENABLE_GPU
 
-  add_dependencies(grpc-endpoint-library proto-library)
-  if(${TRITON_ENABLE_GRPC})
-    add_dependencies(grpc-endpoint-library grpc-library)
-  endif() # TRITON_ENABLE_GRPC
-
   target_link_libraries(
     grpc-endpoint-library
     PUBLIC
+      grpc-service-library
+      proto-library           # from repo-common
       triton-core-serverapi   # from repo-core
       triton-common-json      # from repo-common
   )
@@ -69,17 +66,13 @@ if(${TRITON_ENABLE_GRPC})
   set(
     GRPC_ENDPOINT_OBJECTS
     $<TARGET_OBJECTS:grpc-endpoint-library>
+    $<TARGET_OBJECTS:grpc-service-library>
     $<TARGET_OBJECTS:proto-library>
     )
-  if(${TRITON_ENABLE_GRPC})
-    list(APPEND
-      GRPC_ENDPOINT_OBJECTS
-      $<TARGET_OBJECTS:grpc-library>
-      )
-  endif() # TRITON_ENABLE_GRPC
 
   set(
     GRPC_ENDPOINT_LIBRARIES
+    PRIVATE grpc-service-library
     PRIVATE gRPC::grpc++
     PRIVATE gRPC::grpc
     PRIVATE protobuf::libprotobuf
@@ -92,20 +85,30 @@ endif() # TRITON_ENABLE_GRPC
 set(HTTP_ENDPOINT_OBJECTS "")
 set(HTTP_ENDPOINT_LIBRARIES "")
 
-if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
+if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS} OR ${TRITON_ENABLE_SAGEMAKER})
   find_package(libevhtp CONFIG REQUIRED)
   message(STATUS "Using libevhtp ${libevhtp_VERSION}")
 
-  if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
+  list(APPEND
+    HTTP_ENDPOINT_SRCS
+    http_server.cc
+  )
+  list(APPEND
+    HTTP_ENDPOINT_HDRS
+    http_server.h
+  )
+
+  # Add header / src files based on HTTP related endpoint requested
+  if(${TRITON_ENABLE_SAGEMAKER})
     list(APPEND
       HTTP_ENDPOINT_SRCS
-      http_server.cc
-      )
+      sagemaker_server.cc
+    )
     list(APPEND
       HTTP_ENDPOINT_HDRS
-      http_server.h
-      )
-  endif() # TRITON_ENABLE_HTTP || TRITON_ENABLE_METRICS
+      sagemaker_server.h
+    )
+  endif() # TRITON_ENABLE_SAGEMAKER
 
   add_library(
     http-endpoint-library EXCLUDE_FROM_ALL OBJECT
@@ -116,7 +119,6 @@ if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
     target_include_directories(http-endpoint-library PRIVATE ${CUDA_INCLUDE_DIRS})
   endif() # TRITON_ENABLE_GPU
 
-  add_dependencies(http-endpoint-library proto-library)
   target_include_directories(
     http-endpoint-library
     PRIVATE $<TARGET_PROPERTY:libevhtp::evhtp,INTERFACE_INCLUDE_DIRECTORIES>
@@ -124,6 +126,8 @@ if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
 
   target_link_libraries(
     http-endpoint-library
+    PRIVATE
+      proto-library           # from repo-common
     PUBLIC
       triton-core-serverapi   # from repo-core
       triton-common-json      # from repo-common
@@ -145,7 +149,7 @@ if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
     PRIVATE b64
     PRIVATE z
   )
-endif() # TRITON_ENABLE_HTTP || TRITON_ENABLE_METRICS
+endif() # TRITON_ENABLE_HTTP || TRITON_ENABLE_METRICS || TRITON_ENABLE_SAGEMAKER
 
 #
 # tracing
@@ -408,9 +412,6 @@ endif() # TRITON_ENABLE_ONNXRUNTIME
 if(${TRITON_ENABLE_PYTORCH})
   set(BACKEND_OBJS ${BACKEND_OBJS} $<TARGET_OBJECTS:libtorch-backend-library>)
 endif() # TRITON_ENABLE_PYTORCH
-if(${TRITON_ENABLE_CUSTOM})
-  set(BACKEND_OBJS ${BACKEND_OBJS} $<TARGET_OBJECTS:custom-backend-library>)
-endif() # TRITON_ENABLE_CUSTOM
 if(${TRITON_ENABLE_ENSEMBLE})
   set(BACKEND_OBJS ${BACKEND_OBJS} $<TARGET_OBJECTS:ensemble-backend-library>)
 endif() # TRITON_ENABLE_ENSEMBLE

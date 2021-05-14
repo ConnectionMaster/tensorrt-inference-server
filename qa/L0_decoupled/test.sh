@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2020-2021, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -44,11 +44,16 @@ DECOUPLED_TEST=decoupled_test.py
 rm -f *.log
 
 CLIENT_LOG=`pwd`/client.log
-DATADIR=`pwd`/models
+DATADIR=/data/inferenceserver/${REPO_VERSION}/qa_model_repository
+MODELDIR=`pwd`/models
 SERVER=/opt/tritonserver/bin/tritonserver
 SERVER_ARGS="--model-repository=`pwd`/models"
 SERVER_LOG="./inference_server.log"
 source ../common/util.sh
+
+cp -r $DATADIR/libtorch_nobatch_int32_int32_int32 $MODELDIR/.
+(cd $MODELDIR/libtorch_nobatch_int32_int32_int32 && \
+    sed -i "s/dims:.*\[.*\]/dims: \[ 1 \]/g" config.pbtxt)
 
 run_server
 if [ "$SERVER_PID" == "0" ]; then

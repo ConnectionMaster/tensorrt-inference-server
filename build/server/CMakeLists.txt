@@ -1,4 +1,4 @@
-# Copyright (c) 2019-2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2019-2021, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -59,20 +59,23 @@ FetchContent_Declare(
   repo-common
   GIT_REPOSITORY https://github.com/triton-inference-server/common.git
   GIT_TAG ${TRITON_COMMON_REPO_TAG}
-  GIT_SHALLOW ON
 )
 FetchContent_Declare(
   repo-core
   GIT_REPOSITORY https://github.com/triton-inference-server/core.git
   GIT_TAG ${TRITON_CORE_REPO_TAG}
-  GIT_SHALLOW ON
 )
 FetchContent_Declare(
   repo-backend
   GIT_REPOSITORY https://github.com/triton-inference-server/backend.git
   GIT_TAG ${TRITON_BACKEND_REPO_TAG}
-  GIT_SHALLOW ON
 )
+
+set(TRITON_COMMON_ENABLE_PROTOBUF ON)
+if(TRITON_ENABLE_GRPC)
+  set(TRITON_COMMON_ENABLE_GRPC ON)
+endif() # TRITON_ENABLE_GRPC
+
 FetchContent_MakeAvailable(repo-common repo-core repo-backend)
 
 
@@ -110,6 +113,10 @@ endif() # TRITON_ENABLE_GPU
 if(${TRITON_ENABLE_HTTP})
   add_definitions(-DTRITON_ENABLE_HTTP=1)
 endif() # TRITON_ENABLE_HTTP
+
+if(${TRITON_ENABLE_SAGEMAKER})
+  add_definitions(-DTRITON_ENABLE_SAGEMAKER=1)
+endif() # TRITON_ENABLE_SAGEMAKER
 
 if(${TRITON_ENABLE_GRPC})
   add_definitions(-DTRITON_ENABLE_GRPC=1)
@@ -166,10 +173,6 @@ if(${TRITON_ENABLE_PYTORCH})
   add_definitions(-DTRITON_ENABLE_PYTORCH=1)
 endif() # TRITON_ENABLE_PYTORCH
 
-if(${TRITON_ENABLE_CUSTOM})
-  add_definitions(-DTRITON_ENABLE_CUSTOM=1)
-endif() # TRITON_ENABLE_CUSTOM
-
 if(${TRITON_ENABLE_ENSEMBLE})
   add_definitions(-DTRITON_ENABLE_ENSEMBLE=1)
 endif() # TRITON_ENABLE_ENSEMBLE
@@ -207,7 +210,7 @@ include_directories(${Boost_INCLUDE_DIRS})
 #
 # libevent
 #
-if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS})
+if(${TRITON_ENABLE_HTTP} OR ${TRITON_ENABLE_METRICS} OR ${TRITON_ENABLE_SAGEMAKER})
   find_package(Libevent CONFIG REQUIRED)
   message(STATUS "Using libevent ${Libevent_VERSION}")
   include_directories(${LIBEVENT_INCLUDE_DIRS})
@@ -241,7 +244,6 @@ endif() # TRITON_ENABLE_METRICS
 
 add_subdirectory(../../src/core src/core)
 add_subdirectory(../../src/backends/backend src/backends/backend)
-add_subdirectory(../../src/backends/custom src/backends/custom)
 add_subdirectory(../../src/backends/ensemble src/backends/ensemble)
 add_subdirectory(../../src/backends/onnx src/backends/onnx)
 add_subdirectory(../../src/backends/pytorch src/backends/pytorch)

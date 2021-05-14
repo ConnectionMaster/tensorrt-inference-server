@@ -1,4 +1,4 @@
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2020-2021, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -62,18 +62,18 @@ ensemble_scheduling {
       }
     },
     {
-      model_name: "custom_nobatch_int32_int32_int32"
+      model_name: "libtorch_nobatch_int32_int32_int32"
       model_version: -1
       input_map {
-        key: "INPUT0"
+        key: "INPUT__0"
         value: "repeat_out"
       }
       input_map {
-        key: "INPUT1"
+        key: "INPUT__1"
         value: "identity_out"
       }
       output_map {
-        key: "OUTPUT0"
+        key: "OUTPUT__1"
         value: "OUT"
       }
 

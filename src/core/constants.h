@@ -33,6 +33,7 @@ constexpr char kInferHeaderContentLengthHTTPHeader[] =
     "Inference-Header-Content-Length";
 constexpr char kAcceptEncodingHTTPHeader[] = "Accept-Encoding";
 constexpr char kContentEncodingHTTPHeader[] = "Content-Encoding";
+constexpr char kContentTypeHeader[] = "Content-Type";
 
 #ifdef TRITON_ENABLE_TENSORFLOW
 constexpr char kTensorFlowGraphDefPlatform[] = "tensorflow_graphdef";
@@ -59,11 +60,6 @@ constexpr char kPyTorchLibTorchPlatform[] = "pytorch_libtorch";
 constexpr char kPyTorchLibTorchFilename[] = "model.pt";
 constexpr char kPyTorchBackend[] = "pytorch";
 #endif  // TRITON_ENABLE_PYTORCH
-
-#ifdef TRITON_ENABLE_CUSTOM
-constexpr char kCustomPlatform[] = "custom";
-constexpr char kCustomFilename[] = "libcustom.so";
-#endif  // TRITON_ENABLE_CUSTOM
 
 #ifdef TRITON_ENABLE_ENSEMBLE
 constexpr char kEnsemblePlatform[] = "ensemble";

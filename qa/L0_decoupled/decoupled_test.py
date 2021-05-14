@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
+# Copyright (c) 2020-2021, NVIDIA CORPORATION. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -406,7 +406,7 @@ class DecoupledTest(tu.TestResultCollector):
         delay_data = (np.ones([repeat_count], dtype=np.uint32)) * delay_time
         wait_data = np.array([wait_time], dtype=np.uint32)
 
-        if protocol is "grpc":
+        if protocol == "grpc":
             # Use the inputs and outputs from the setUp
             this_inputs = self.inputs_
             this_outputs = self.outputs_
@@ -430,7 +430,7 @@ class DecoupledTest(tu.TestResultCollector):
         # Initialize data for WAIT
         this_inputs[2].set_data_from_numpy(wait_data)
 
-        if protocol is "grpc":
+        if protocol == "grpc":
             triton_client = grpcclient.InferenceServerClient(
                 url="localhost:8001", verbose=True)
         else:

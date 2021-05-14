@@ -133,6 +133,7 @@ target_link_libraries(
   PRIVATE triton-common-error        # from repo-common
   PRIVATE triton-common-sync-queue   # from repo-common
   PRIVATE triton-core-serverapi      # from repo-core
+  PRIVATE proto-library              # from repo-common
   PRIVATE ${GTEST_LIBRARY}
   PRIVATE ${GTEST_MAIN_LIBRARY}
   PRIVATE ${CUDA_LIBRARIES}
@@ -162,6 +163,7 @@ add_executable(
   pinned_memory_manager_test
   ${PINNED_MEMORY_MANAGER_TEST_SRCS}
   ${PINNED_MEMORY_MANAGER_TEST_HDRS}
+  $<TARGET_OBJECTS:proto-library>
 )
 set_target_properties(
   pinned_memory_manager_test
@@ -181,9 +183,11 @@ target_link_libraries(
   PRIVATE triton-common-error        # from repo-common
   PRIVATE triton-common-sync-queue   # from repo-common
   PRIVATE triton-core-serverapi      # from repo-core
+  PRIVATE proto-library              # from repo-common
   PRIVATE ${GTEST_LIBRARY}
   PRIVATE ${GTEST_MAIN_LIBRARY}
   PRIVATE ${CUDA_LIBRARIES}
+  PRIVATE protobuf::libprotobuf
   PRIVATE -lpthread
 )
 install(
@@ -290,19 +294,18 @@ target_include_directories(
 target_link_libraries(
   data_compressor_test
   PRIVATE triton-core-serverapi  # from repo-core
+  PRIVATE proto-library          # from repo-common
   PRIVATE ${GTEST_LIBRARY}
   PRIVATE ${GTEST_MAIN_LIBRARY}
+  PRIVATE ${LIBEVENT_LIBRARIES}
+  PRIVATE protobuf::libprotobuf
   PRIVATE -lpthread
   PRIVATE -lz
-  PRIVATE ${LIBEVENT_LIBRARIES}
 )
 install(
   TARGETS data_compressor_test
   RUNTIME DESTINATION bin
 )
-
-# Generate C++ protobuf files for the following tests
-protobuf_generate_cpp(MODEL_CONFIG_PROTO_SRC MODEL_CONFIG_PROTO_HDR ../core/model_config.proto)
 
 #
 # Unit test for TritonRepoAgent ... (TODO specify the other classes)
@@ -365,6 +368,7 @@ target_link_libraries(
   PRIVATE triton-core-repoagentapi  # from repo-core
   PRIVATE triton-common-error       # from repo-common
   PRIVATE triton-common-json        # from repo-common
+  PRIVATE proto-library             # from repo-common
   PRIVATE ${GTEST_LIBRARY}
   PRIVATE ${GTEST_MAIN_LIBRARY}
   PRIVATE protobuf::libprotobuf
@@ -387,7 +391,6 @@ target_compile_options(triton_repo_agent_test PRIVATE
 -UTRITON_ENABLE_ONNXRUNTIME_TENSORRT
 -UTRITON_ENABLE_ONNXRUNTIME_OPENVINO
 -UTRITON_ENABLE_PYTORCH
--UTRITON_ENABLE_CUSTOM
 -UTRITON_ENABLE_ENSEMBLE
 -UTRITON_ENABLE_CUDA_GRAPH
 -UTRITON_ENABLE_GCS
@@ -451,6 +454,7 @@ target_link_libraries(
   rate_limiter_test
   PRIVATE triton-common-error     # from repo-common
   PRIVATE triton-core-serverapi   # from repo-core
+  PRIVATE proto-library           # from repo-common
   PRIVATE ${GTEST_LIBRARY}
   PRIVATE ${GTEST_MAIN_LIBRARY}
   PRIVATE protobuf::libprotobuf
@@ -460,10 +464,7 @@ install(
   RUNTIME DESTINATION bin
 )
 
-add_subdirectory(custom/sdk custom/sdk)
-add_subdirectory(custom/addsub custom/addsub)
-add_subdirectory(custom/image_preprocess custom/image_preprocess)
-add_subdirectory(custom/param custom/param)
 add_subdirectory(sequence sequence)
 add_subdirectory(dyna_sequence dyna_sequence)
+add_subdirectory(distributed_addsub distributed_addsub)
 add_subdirectory(repoagent/relocation_repoagent repoagent/relocation_repoagent)
